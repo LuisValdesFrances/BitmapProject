@@ -32,25 +32,41 @@ const unsigned int BIMAP_ROW_SIZE[] = {
 
 */
 
+//Public methodes interface
+typedef struct _pixel *Pixel;
+/*
+	int red;
+	int green;
+	int blue;
+*/
+
+Pixel createPixel(int red, int blue, int green);
+
 /*Abstract data structure*/ 
 typedef struct _bitmap *Bitmap;
 /*
 	int[] BMP_Header
 	int[] DIB_Header
-	int[] pixelImage
+	int[] imagePixels
 
 */
 Bitmap buildBitmap(int imageWidth, int imageHeight);
 /*
 	BMP_Header[SIZE_BMP_HEADER]
 	BMP_Header[SIZE_DIB_HEADER]
-	BMP_Header[getSizeImage(imageWidth, imageHeight)]
+	imagePixels[getSizeImage(imageWidth, imageHeight)]
 */
 
+void insertPixel(Bitmap bitmap, Pixel pixel, int row, int column);
+
+void writeBitmap(Bitmap bitmap, *char path, *char name);
+
+
+//Internal methodes
 /**
 Get image size (including padding)
 */
-int getImageSize(int imageWidth, int imageHeight)
+int getBitmapSize(int bitmapWidth, int bitmapHeight)
 
 /**
 Get char array of hexadecimnal value. The array size is determite for rowSize
