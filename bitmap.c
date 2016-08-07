@@ -5,29 +5,23 @@
 
 
 struct _pixel{
-	int red;
-	int green;
-	int blue;
-};
-
-struct _header{
-	int values[SIZE_VALUE_HEADER];
+	char red;
+	char green;
+	char blue;
 };
 
 struct _bitmap{
-	Header BMP[BMP_HEADER_ROWS];
-	Header DIB[DIB_HEADER_ROWS];
-	Pixel pixels[MAX_IMAGE_WIDTH*MAX_IMAGE_HEIGHT];
-	int imageWidth;
-	int imageHeight;
+	Pixel *pixels;
 };
 
 Bitmap buildBitmap(int width, int height){
 	Bitmap bitmap = malloc(sizeof(struct _bitmap));
 	assert(bitmap != NULL);
-	bitmap->imageWidth = width;
-	bitmap->imageHeight = height;
-	//bitmap->pixels[imageWidth*imageHeight];
+
+	//Necesito guardar esto fuera del frame???????
+	Pixel pixels[width*height];
+
+	bitmap->pixels = &pixels[0];
 	return bitmap;
 }
 

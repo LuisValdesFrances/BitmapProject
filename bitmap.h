@@ -22,12 +22,9 @@ typedef struct _bitmap *Bitmap;//Puntero hacia _bitmap
 
 /*Specific data structure*/
 typedef struct _pixel Pixel;
-typedef struct _header Header;
 
 //Public methodes interface
 Bitmap buildBitmap(int imageWidth, int imageHeight);
-
-Pixel createPixel(int redValue, int blueValue, int greenValue);
 
 void insertPixel(Bitmap bitmap, int row, int column, int redValue, int blueValue, int greenValue);
 
