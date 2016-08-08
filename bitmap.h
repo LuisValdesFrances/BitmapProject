@@ -7,17 +7,8 @@
 #define MAX_IMAGE_WIDTH 1024
 #define MAX_IMAGE_HEIGHT 1024
 
-#define BMP_HEADER_ROWS 5
-#define DIB_HEADER_ROWS 11
-#define SIZE_VALUE_HEADER 4 //Can be 4 or 2
-#define BMP_HEADER_SIZE 14
-#define DIB_HEADER_SIZE 40
-#define OFFSET_PIXEL_ARRAY (SIZE_BMP_HEADER + SIZE_DIB_HEADER)
-#define NUMBER_BITS_PIXEL 24
-
-#define PIXEL_IMAGE_SIZE 3
-
 /*Abstract data structure*/ 
+/*typedef oculta el tipo dee dato (int, char, etc) No nos interesa*/
 typedef struct _bitmap *Bitmap;//Puntero hacia _bitmap
 
 /*Specific data structure*/

@@ -19,9 +19,13 @@ Bitmap buildBitmap(int width, int height){
 	assert(bitmap != NULL);
 
 	//Necesito guardar esto fuera del frame???????
-	Pixel pixels[width*height];
+	//Pixel arrayPixel[width*height];
+	//Pixel *pPixel = malloc(sizeof(arrayPixel));
+	int imgSize = width*height;
+	Pixel *pPixel = malloc(sizeof(Pixel)*imgSize);
 
-	bitmap->pixels = &pixels[0];
+
+	bitmap->pixels = pPixel;
 	return bitmap;
 }
 
