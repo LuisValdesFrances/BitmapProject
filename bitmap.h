@@ -1,26 +1,34 @@
 #ifndef __BITMAP_H__
 #define __BITMAP_H__
 
-#define FALSE 0
-#define TRUE  1
 
 #define MAX_IMAGE_WIDTH 1024
 #define MAX_IMAGE_HEIGHT 1024
 
 /*Abstract data structure*/ 
-/*typedef oculta el tipo dee dato (int, char, etc) No nos interesa*/
-typedef struct _bitmap *Bitmap;//Puntero hacia _bitmap
+typedef struct _bitmap *Bitmap;
 
-/*Specific data structure*/
-typedef struct _pixel Pixel;
+
+typedef struct _color {
+	unsigned char red;
+	unsigned char green;
+	unsigned char blue;
+} color;
+
 
 //Public methodes interface
-Bitmap buildBitmap(int imageWidth, int imageHeight);
+Bitmap buildBitmap(int width, int height);
 
-void insertPixel(Bitmap bitmap, int row, int column, int redValue, int blueValue, int greenValue);
+void setPixel(Bitmap bitmap, int x, int y, color color);
 
-void writeBitmap(Bitmap bitmap, char *path, char *name);
+void saveBitmap(Bitmap bitmap, char *filename);
 
 void destroyBitmap(Bitmap *bitmap);
 
-#endif	
+#endif
+
+
+
+
+
+
