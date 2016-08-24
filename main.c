@@ -5,7 +5,7 @@
 int main(int argc, char *argv[]) {
 
 	//Create bitmap
-	Bitmap bitmap = buildBitmap(4,4);
+	Bitmap bitmap = buildBitmap(4,2);
 	
 	//Insert pixels
 	/*
