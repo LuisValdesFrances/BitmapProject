@@ -36,12 +36,22 @@ struct _dib{
 void printHeader(struct _header header);
 void printDib(struct _dib dib);
 void printResult(struct _header header, struct _dib dib, Bitmap bitmap);
-int getPading(int width);
+
+int getImageSize(Bitmap bitmap);
+int getPaddingSize(Bitmap bitmap);
+int getPaddingFile(int width);
+
 void setBitmapSize(struct _dib *dib, Bitmap bitmap);
 void setBitmapDimensions(struct _dib *dib, Bitmap bitmap);
 void printHeader(struct _header header);
 void printDib(struct _dib dib);
+void write(char *filename, struct _header header, struct _dib dib, Bitmap bitmap);
+void setValuesInPixelArray(unsigned char *pixelArray, int size, Bitmap bitmap);
 void printBitmap(Bitmap bitmap);
+
+void reverse(unsigned char *pixelArray, int size);
+void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize);
+void addPadding(Bitmap bitmap, unsigned char *pixelArray, int size, unsigned char *pixelArrayPadding, int sizePadding);
 
 
 Bitmap buildBitmap(int width, int height){
@@ -134,9 +144,7 @@ void setBitmapDimensions(struct _dib *dib, Bitmap bitmap){
 	dib->bitmapHeight[3] = (bitmap->height>>24) & 0xff;
 }
 void setBitmapSize(struct _dib *dib, Bitmap bitmap){
-	int imageSize = (bitmap->width*bitmap->height) * 3;
-	int paddingSize = (getPading(bitmap->width) * bitmap->height);
-	int totalSize = imageSize + paddingSize;
+	int totalSize = getImageSize(bitmap) + getPaddingSize(bitmap);
 	dib->bitmapSize[0] = totalSize & 0xff;
 	dib->bitmapSize[1] = (totalSize>>8) & 0xff;;
 	dib->bitmapSize[2] = (totalSize>>16) & 0xff;;
@@ -202,28 +210,136 @@ static struct _dib createDib(int size, Bitmap bitmap) {
 
 void saveBitmap(Bitmap bitmap, char *filename){
 
-
 	//Tanaño en numero de bytes
 	int headerSize = 14;
 	int dibSize = 40;
 	int pixelArraySize = (bitmap->width * bitmap->height)*3;
 	
-
 	int fileSize = headerSize + dibSize + pixelArraySize;
 	int pixelArrayOffset = headerSize + dibSize;
 
 	struct _header header = createHeader(fileSize, pixelArrayOffset);
 	struct _dib dib = createDib(dibSize, bitmap);
-	/*
-	char *pixelArray = createPixelArray(bitmap);
-	//*/
 
-
-	printResult(header, dib, bitmap);
-
-	//write();
+	//printResult(header, dib, bitmap);
+	write(filename, header, dib, bitmap);
 
 	//*/
+}
+
+void setValuesInPixelArray(unsigned char *pixelArray, int size, Bitmap bitmap){
+	
+	unsigned char pArray[getImageSize(bitmap) + getPaddingSize(bitmap)];
+
+	
+	int i = 0;
+	int arrayIndex = 0;
+	while(i < bitmap->width*bitmap->height){
+		
+		
+		char b = (bitmap->pixels + i)->blue;
+		char g = (bitmap->pixels + i)->green;
+		char r = (bitmap->pixels + i)->red;
+
+		pArray[arrayIndex++] = b;
+		pArray[arrayIndex++] = g;
+		pArray[arrayIndex++] = r;  
+		i++;
+	}
+
+
+
+	//Atencion, en el archivo .bitmap este array se recorre de izquierda a derecha y de abajo a arriba
+	reverse(pArray, getImageSize(bitmap));
+	
+	int fileSize = bitmap->width*3;
+	reverseFile(pArray, fileSize, getImageSize(bitmap));
+	
+	addPadding(bitmap, pArray, getImageSize(bitmap), pixelArray, getPaddingFile(bitmap->width));
+}
+
+void addPadding(Bitmap bitmap, unsigned char *pixelArray, int size, unsigned char *pixelArrayPadding, int sizePadding){
+
+	int i = 0;
+	int j = 0;
+	int p = 0;
+
+	
+	while(i < size){
+		
+		pixelArrayPadding[p] = pixelArray[i]; 
+		p++;
+		i++;
+		//Add pading
+		if(i % (bitmap->width*3) == 0){
+			
+			while(j < sizePadding){
+				pixelArrayPadding[p] = 0;
+				j++;
+				p++;
+			}
+			j = 0;
+			
+		}
+	}
+}
+
+void reverse(unsigned char *pixelArray, int size){
+	int i = 0;
+	unsigned char aux;
+
+	while(i < size/2){
+		aux = pixelArray[i];
+		pixelArray[i] = pixelArray[size - (i+1)];
+		pixelArray[size - (i+1)] = aux;
+		i++;
+	}
+}
+/*
+void copy(unsigned char *source, unsigned char *destination, int size){
+	int i = 0;
+	while(i < size){
+		destination[i] = 
+	}
+}
+*/
+
+void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize){
+
+	unsigned char aux[fileSize];
+	int i = 0;
+	int j = 0;
+	int fileControl = 0;
+	while(i < totalSize){
+		aux[fileControl] = pixelArray[i];
+		i++;
+		fileControl++;
+		//Reserse any file
+		if(i%fileSize == 0){
+			reverse(aux, fileSize);
+			while(j < fileSize){
+				pixelArray[i - (fileSize-j)] = aux[j];
+				j++;
+			}
+			j = 0;
+			fileControl = 0;
+		}
+	}
+}
+
+void write(char *filename, struct _header header, struct _dib dib, Bitmap bitmap){
+	
+	unsigned char pixelArray[getImageSize(bitmap) + getPaddingSize(bitmap)];
+	
+	setValuesInPixelArray(pixelArray, getImageSize(bitmap) + getPaddingSize(bitmap), bitmap);
+
+
+	int i = 0;
+
+	while(i < getImageSize(bitmap) + getPaddingSize(bitmap)){
+		printf("\n%d",(int)pixelArray[i]);
+		i++;
+	}
 }
 
 void printResult(struct _header header, struct _dib dib, Bitmap bitmap){
@@ -309,7 +425,15 @@ void printDib(struct _dib dib){
 	printf(",%d", (int)dib.importantColors[3]);
 }
 
-int getPading(int width){
+int getImageSize(Bitmap bitmap){
+	return (bitmap->width*bitmap->height) * 3;
+}
+
+int getPaddingSize(Bitmap bitmap){
+	return (getPaddingFile(bitmap->width) * bitmap->height);
+}
+
+int getPaddingFile(int width){
 	  
 	int rest = width%4;
 	/*
@@ -339,7 +463,7 @@ void printBitmap(Bitmap bitmap){
 		i++;
 		if(i % bitmap->width == 0){
 			//print offset
-			while(offsetIndex < getPading(bitmap->width)/2){
+			while(offsetIndex < getPaddingFile(bitmap->width)/2){
 				printf("[0,0]");
 				offsetIndex++;
 			}

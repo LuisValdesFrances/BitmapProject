@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
 	color blue;
 	color green;
 	color red;
+	
 	blue.red = 0;
 	blue.green = 0;
 	blue.blue = 255;
@@ -45,6 +46,20 @@ int main(int argc, char *argv[]) {
 	red.red = 255;
 	red.green = 0;
 	red.blue = 0;
+	/*
+	blue.red = 1;
+	blue.green = 2;
+	blue.blue = 3;
+	green.red = 4;
+	green.green = 5;
+	green.blue = 6;
+	red.red = 7;
+	red.green = 8;
+	red.blue = 9;
+	white.red = 10;
+	white.green = 11;
+	white.blue = 12;
+	*/
 	setPixel(bitmap, 0, 0, blue);
 	setPixel(bitmap, 1, 0, green);
 	setPixel(bitmap, 0, 1, red);
