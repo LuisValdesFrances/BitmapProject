@@ -23,7 +23,7 @@ void setPixel(Bitmap bitmap, int x, int y, color color);
 
 void saveBitmap(Bitmap bitmap, char *filename);
 
-void destroyBitmap(Bitmap *bitmap);
+void destroyBitmap(Bitmap bitmap);
 
 #endif
 
