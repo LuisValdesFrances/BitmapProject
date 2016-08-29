@@ -351,63 +351,9 @@ static void saveInFile(char *filename, struct _header header, struct _dib dib, u
  	
  	fp = fopen (filename, "a+t" ); //parametro para escritura al final y para file tipo texto
  	
- 	//Header
- 	fputc(header.signature[0], fp);
- 	fputc(header.signature[1], fp);
-	fputc(header.fileSize[0], fp);
- 	fputc(header.fileSize[1], fp);
- 	fputc(header.fileSize[2], fp);
- 	fputc(header.fileSize[3], fp);
-	fputc(header.unused1[0], fp);
- 	fputc(header.unused1[1], fp);
- 	fputc(header.unused1[2], fp);
- 	fputc(header.unused1[3], fp);
-	fputc(header.pixelArrayOffset[0], fp);
- 	fputc(header.pixelArrayOffset[1], fp);
- 	fputc(header.pixelArrayOffset[2], fp);
- 	fputc(header.pixelArrayOffset[3], fp);
- 	//DIB
- 	fputc (dib.dibSize[0], fp);
- 	fputc (dib.dibSize[1], fp);
- 	fputc (dib.dibSize[2], fp);
- 	fputc (dib.dibSize[3], fp);
- 	fputc (dib.bitmapWidth[0], fp);
- 	fputc (dib.bitmapWidth[1], fp);
- 	fputc (dib.bitmapWidth[2], fp);
- 	fputc (dib.bitmapWidth[3], fp);
- 	fputc (dib.bitmapHeight[0], fp);
- 	fputc (dib.bitmapHeight[1], fp);
- 	fputc (dib.bitmapHeight[2], fp);
- 	fputc (dib.bitmapHeight[3], fp);
- 	fputc (dib.numberColors[0], fp);
- 	fputc (dib.numberColors[1], fp);
- 	fputc (dib.NumberBitsPerPixel[0], fp);
- 	fputc (dib.NumberBitsPerPixel[1], fp);
- 	fputc (dib.biRGB[0], fp);
- 	fputc (dib.biRGB[1], fp);
- 	fputc (dib.biRGB[2], fp);
- 	fputc (dib.biRGB[3], fp);
- 	fputc (dib.bitmapSize[0], fp);
- 	fputc (dib.bitmapSize[1], fp);
- 	fputc (dib.bitmapSize[2], fp);
- 	fputc (dib.bitmapSize[3], fp);
- 	fputc (dib.printResolutionHorizontal[0], fp);
- 	fputc (dib.printResolutionHorizontal[1], fp);
- 	fputc (dib.printResolutionHorizontal[2], fp);
- 	fputc (dib.printResolutionHorizontal[3], fp);
- 	fputc (dib.printResolutionVertical[0], fp);
- 	fputc (dib.printResolutionVertical[1], fp);
- 	fputc (dib.printResolutionVertical[2], fp);
- 	fputc (dib.printResolutionVertical[3], fp);
- 	fputc (dib.colorsPalette[0], fp);
- 	fputc (dib.colorsPalette[1], fp);
- 	fputc (dib.colorsPalette[2], fp);
- 	fputc (dib.colorsPalette[3], fp);
- 	fputc (dib.importantColors[0], fp);
- 	fputc (dib.importantColors[1], fp);
- 	fputc (dib.importantColors[2], fp);
- 	fputc (dib.importantColors[3], fp);
-
+ 	fwrite(&header, sizeof(struct _header), 1, fp);
+ 	fwrite(&dib, sizeof(struct _dib), 1, fp);
+ 	
  	//Pixel array
  	int i = 0;
  	while(i < pixelArraySize){
