@@ -77,9 +77,8 @@ static void testSetPixel(){
 static void testSaveBitmap(){
 	printf("testSaveBitmap\n");
 	char path[] = "/home/luis/Escritorio/bitmapTest.bmp";
-	/*
-	int width = 34;
-	int height = 57;
+	int width = 100;
+	int height = 100;
 	Bitmap bitmap = buildBitmap(width,height);
 	color black;
 	color white;
@@ -93,7 +92,6 @@ static void testSaveBitmap(){
 	int y = 0;
 	int x = 0;
 	while(y < height){
-		
 		while(x < width){
 			if((y%2 == 0 && x%2 == 0) || (y%2 != 0 && x%2 != 0)){
 				setPixel(bitmap, x, y, black);
@@ -106,10 +104,25 @@ static void testSaveBitmap(){
 		y++;
 	}
 	saveBitmap(bitmap, path);
-	destroyBitmap(&bitmap);
-	*/
 	Bitmap lBitmap = loadBitmap(path);
 
+	y = 0;
+	x = 0;
+	color *c;
+	color *c2;
+	while(y < height){
+		while(x < width){
+			c = getPixel(bitmap, x, y);
+			c2 = getPixel(lBitmap, x, y);
+			assert(c->red == c2->red && c->green == c2->green && c->blue == c2->blue);
+			x++;
+		}
+		x = 0;
+		y++;
+	}
+
+	
+	destroyBitmap(&bitmap);
 	destroyBitmap(&lBitmap);
 
 }

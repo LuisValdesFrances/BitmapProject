@@ -59,8 +59,11 @@ static void reverse(unsigned char *pixelArray, int size);
 static void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize);
 static void addPadding(Bitmap bitmap, unsigned char *pixelArray, int size, unsigned char *pixelArrayPadding, int sizePadding);
 
+static void readBitmap(char *filename, unsigned char *buffer);
 static int getBitmapWidth(unsigned char *bitmapArray);
 static int getBitmapHeight(unsigned char *bitmapArray);
+static void extractPixelArray(Bitmap bitmap, unsigned char *buffer, unsigned char *pixelArray);
+static void deletePadding(Bitmap bitmap, unsigned char *pixelArrayPadding, unsigned char *pixelArray);
 
 static void printResult(struct _header header, struct _dib dib, unsigned char *pixelArrayPadding, int pixelArraySize);
 static void printHeader(struct _header header);
@@ -69,6 +72,9 @@ static void printPixelArray(unsigned char *pixelArrayPadding, int size);
 
 
 Bitmap buildBitmap(int width, int height){
+	if(width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT){
+		return NULL;
+	}
 	/*
 	La idea es alojar una serie de datos, los que componen un bitmap en la memoria heap. Así que el 
 	objetivo de este metodo es crear espacio en la memoria heap, el suficiente para que pueda almacenar
@@ -110,9 +116,50 @@ Bitmap buildBitmap(int width, int height){
 }
 
 Bitmap loadBitmap(char *filename){
-	//unsigned char *buff = malloc(sizeof(char)*1024);
-	unsigned char buff[1024];
+	int maxImageSize = MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT;
+
+	//Como la imagen puede ser muy grande, decido alojarla en el heap
+	unsigned char *buffer = malloc(sizeof(char)*maxImageSize);
 	
+	readBitmap(filename, buffer);
+	
+
+ 	int imgWidth= getBitmapWidth(buffer);
+ 	int imgHeight = getBitmapHeight(buffer);
+
+ 	
+
+ 	printf("\nBitmap width: %d", imgWidth);
+ 	printf("\nBitmap height: %d", imgHeight);
+
+ 	Bitmap bitmap = buildBitmap(imgWidth, imgHeight);
+
+
+ 	unsigned char pixelArray[getImageSize(bitmap)];
+ 	unsigned char pixelArrayPadding[getImageSize(bitmap) + getPaddingSize(bitmap)];
+
+ 	extractPixelArray(bitmap, buffer, pixelArrayPadding);
+ 	deletePadding(bitmap, pixelArrayPadding, pixelArray);
+ 	
+ 	reverse(pixelArray, getImageSize(bitmap));
+ 	int fileSize = bitmap->width*3;
+	reverseFile(pixelArray, fileSize, getImageSize(bitmap));
+
+	free(buffer);
+ 	buffer = NULL;
+
+ 	return bitmap;
+}
+
+static void extractPixelArray(Bitmap bitmap, unsigned char *buffer, unsigned char *pixelArrayPadding){
+
+}
+
+static void deletePadding(Bitmap bitmap, unsigned char *pixelArrayPadding, unsigned char *pixelArray){
+
+}
+
+static void readBitmap(char *filename, unsigned char *buffer){
 	int totalLines = 0;
  	int data = 0;
  	FILE *fp;
@@ -122,20 +169,10 @@ Bitmap loadBitmap(char *filename){
  	
  	
  	while((data = fgetc(fp)) != EOF){
- 		buff[totalLines] = data;
+ 		buffer[totalLines] = data;
  		totalLines++;
  	}
  	fclose(fp);
-
- 	
- 	printf("\nBitmap width: %d",getBitmapWidth(buff));
-	printf("\nSEGMENTATION FAULT :( ");
- 	printf("\nBitmap height: %d",getBitmapHeight(buff));
-
- 	//free(buff);
- 	//buff = NULL;
-
- 	return buildBitmap(getBitmapWidth(buff), getBitmapHeight(buff));
 }
 
 static int getBitmapWidth(unsigned char *bitmapArray){
@@ -146,6 +183,7 @@ static int getBitmapWidth(unsigned char *bitmapArray){
 	width += (bitmapArray[21]>>24) & 0xff;
 	return width;
 }
+
 static int getBitmapHeight(unsigned char *bitmapArray){
 	int height = 0;
 	height += bitmapArray[22] & 0xff;

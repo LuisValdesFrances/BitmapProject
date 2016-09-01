@@ -1,6 +1,9 @@
 #ifndef __BITMAP_H__
 #define __BITMAP_H__
 
+#define MAX_IMAGE_WIDTH 1024
+#define MAX_IMAGE_HEIGHT 1024
+
 
 /*Abstract data structure*/ 
 typedef struct _bitmap *Bitmap;
