@@ -1,8 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "bitmap.h"
+#include "bitmap_test.h"
 
 int main(int argc, char *argv[]) {
+
+	test();
+
+
+	/*
 
 	//Create bitmap
 	int width = 100;
@@ -10,10 +16,6 @@ int main(int argc, char *argv[]) {
 	Bitmap bitmap = buildBitmap(width,height);
 	
 	//Insert pixels
-	/*
-	0,1,0,1
-	1,0,1,1
-	*/
 	color black;
 	color white;
 	black.red = 0;
@@ -39,11 +41,14 @@ int main(int argc, char *argv[]) {
 		y++;
 	}
 	//Save bitmap
-	char path[] = "/home/luis/Escritorio/img_3.bmp";
+	char path[] = "/home/luis/Escritorio/img_4.bmp";
 
 	saveBitmap(bitmap, path);
 
-	destroyBitmap(bitmap);
+	//le paso direccion de memoria donde se encuentra el bitmap
+	destroyBitmap(&bitmap);
+
+	*/
 
 	return EXIT_SUCCESS;
 }

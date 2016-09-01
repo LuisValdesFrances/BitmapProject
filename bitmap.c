@@ -59,15 +59,13 @@ static void reverse(unsigned char *pixelArray, int size);
 static void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize);
 static void addPadding(Bitmap bitmap, unsigned char *pixelArray, int size, unsigned char *pixelArrayPadding, int sizePadding);
 
+static int getBitmapWidth(unsigned char *bitmapArray);
+static int getBitmapHeight(unsigned char *bitmapArray);
+
+static void printResult(struct _header header, struct _dib dib, unsigned char *pixelArrayPadding, int pixelArraySize);
 static void printHeader(struct _header header);
 static void printDib(struct _dib dib);
-static void printResult(struct _header header, struct _dib dib, unsigned char *pixelArrayPadding, int pixelArraySize);
 static void printPixelArray(unsigned char *pixelArrayPadding, int size);
-
-
-
-
-
 
 
 Bitmap buildBitmap(int width, int height){
@@ -111,11 +109,89 @@ Bitmap buildBitmap(int width, int height){
 	return bitmap;
 }
 
+Bitmap loadBitmap(char *filename){
+	//unsigned char *buff = malloc(sizeof(char)*1024);
+	unsigned char buff[1024];
+	
+	int totalLines = 0;
+ 	int data = 0;
+ 	FILE *fp;
+ 	
+ 	fp = fopen (filename, "r");
+ 	assert(fp != NULL);
+ 	
+ 	
+ 	while((data = fgetc(fp)) != EOF){
+ 		buff[totalLines] = data;
+ 		totalLines++;
+ 	}
+ 	fclose(fp);
+
+ 	
+ 	printf("\nBitmap width: %d",getBitmapWidth(buff));
+	printf("\nSEGMENTATION FAULT :( ");
+ 	printf("\nBitmap height: %d",getBitmapHeight(buff));
+
+ 	//free(buff);
+ 	//buff = NULL;
+
+ 	return buildBitmap(getBitmapWidth(buff), getBitmapHeight(buff));
+}
+
+static int getBitmapWidth(unsigned char *bitmapArray){
+	int width = 0;
+	width += bitmapArray[18] & 0xff;
+	width += (bitmapArray[19]>>8) & 0xff;
+	width += (bitmapArray[20]>>16) & 0xff;
+	width += (bitmapArray[21]>>24) & 0xff;
+	return width;
+}
+static int getBitmapHeight(unsigned char *bitmapArray){
+	int height = 0;
+	height += bitmapArray[22] & 0xff;
+	height += (bitmapArray[23]>>8) & 0xff;
+	height += (bitmapArray[24]>>16) & 0xff;
+	height += (bitmapArray[25]>>24) & 0xff;
+	return height;
+}
+
+/*
+La funcion se come como paramentro un puntero a bitmap y un puntero
+a un puntero de bitmap.
+La funcion free solo resetea a 0 los valores guardados en el heap y comunica al sistema de que ese
+espacio esta disponible de nuevo.
+En cambio cuando se asigna a un puntero a NULL, se des-referencia hacia a donde apuntaba (Su valor no apunta a nada), 
+y por este motivo es necesario actuar sobre el valor del puntero (que esta fuera de la función) y no sobre el puntero
+que se duplica dentro de la función.
+*/
+void destroyBitmap(Bitmap *pBitmap){
+	
+	/*
+	Bitmap b = *pBitmap;
+	free(b->pixels);
+	b->pixels = NULL;
+	assert(b->pixels == NULL);
+	*/
+
+	free((*pBitmap)->pixels);
+	(*pBitmap)->pixels = NULL;
+	assert((*pBitmap)->pixels == NULL);
+
+	free(*pBitmap);
+	*pBitmap = NULL;
+}
+
 void setPixel(Bitmap bitmap, int x, int y, color c){
 	//Formula: x+(width*y)
 	int index = x + (bitmap->width * y);
 	bitmap->pixels[index] = c;
-	printf("\nInsertado color en la posicion: %d", index);
+}
+
+color *getPixel(Bitmap bitmap, int x, int y){
+	assert(x < bitmap->width && y < bitmap->height);
+	int index = x + (bitmap->width * y);
+	color *c = &(bitmap->pixels[index]);
+	return c;
 }
 
 void saveBitmap(Bitmap bitmap, char *filename){
@@ -132,13 +208,6 @@ void saveBitmap(Bitmap bitmap, char *filename){
 	struct _dib dib = createDib(dibSize, bitmap);
 
 	write(bitmap, filename, header, dib, pixelArraySize);
-}
-
-void destroyBitmap(Bitmap bitmap){
-	free(bitmap->pixels);
-	bitmap->pixels = NULL;
-	free(bitmap);
-	bitmap = NULL;
 }
 
 static struct _header createHeader(int fileSize, int pixelArrayOffset) {
@@ -213,6 +282,7 @@ static void setDibSize(struct _dib *dib, int size){
 	dib->dibSize[2] = (size>>16) & 0xff;
 	dib->dibSize[3] = (size>>24) & 0xff;
 }
+
 static void setBitmapDimensions(struct _dib *dib, Bitmap bitmap){
 	dib->bitmapWidth[0] = bitmap->width & 0xff;
 	dib->bitmapWidth[1] = (bitmap->width>>8) & 0xff;
@@ -223,6 +293,7 @@ static void setBitmapDimensions(struct _dib *dib, Bitmap bitmap){
 	dib->bitmapHeight[2] = (bitmap->height>>16) & 0xff;
 	dib->bitmapHeight[3] = (bitmap->height>>24) & 0xff;
 }
+
 static void setBitmapSize(struct _dib *dib, Bitmap bitmap){
 	int totalSize = getImageSize(bitmap) + getPaddingSize(bitmap);
 	dib->bitmapSize[0] = totalSize & 0xff;
@@ -230,6 +301,7 @@ static void setBitmapSize(struct _dib *dib, Bitmap bitmap){
 	dib->bitmapSize[2] = (totalSize>>16) & 0xff;;
 	dib->bitmapSize[3] = (totalSize>>24) & 0xff;;
 }
+
 static void setDibConstants(struct _dib *dib){
 	dib->numberColors[0] = 0;
 	dib->numberColors[1] = 1;
@@ -306,7 +378,6 @@ static void addPadding(Bitmap bitmap, unsigned char *pixelArray, int size, unsig
 				totalCount++;
 			}
 			paddingCount = 0;
-			
 		}
 	}
 }
@@ -349,7 +420,7 @@ static void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize){
 static void saveInFile(char *filename, struct _header header, struct _dib dib, unsigned char *pixelArray, int pixelArraySize){
 	FILE *fp;
  	
- 	fp = fopen (filename, "a+t" ); //parametro para escritura al final y para file tipo texto
+ 	fp = fopen(filename, "w"); //parametro para escritura al final y para file tipo texto
  	
  	fwrite(&header, sizeof(struct _header), 1, fp);
  	fwrite(&dib, sizeof(struct _dib), 1, fp);
@@ -360,7 +431,7 @@ static void saveInFile(char *filename, struct _header header, struct _dib dib, u
 		fputc(pixelArray[i], fp);
 		i++;
 	}
-	fclose (fp);
+	fclose(fp);
 }
 
 static void printResult(struct _header header, struct _dib dib, unsigned char *pixelArrayPadding, int pixelArraySize){
@@ -370,6 +441,7 @@ static void printResult(struct _header header, struct _dib dib, unsigned char *p
 }
 
 static void printHeader(struct _header header){
+	/*
 	printf("\n\n***HEADER***");
 	printf("\n-Header signature-");
 	printf("\n%c", header.signature[0]);
@@ -389,9 +461,11 @@ static void printHeader(struct _header header){
 	printf(",%d", (int)header.pixelArrayOffset[1]);
 	printf(",%d", (int)header.pixelArrayOffset[2]);
 	printf(",%d", (int)header.pixelArrayOffset[3]);
+	*/
 }
 
 static void printDib(struct _dib dib){
+	/*
 	printf("\n\n***DIB***");
 	printf("\n-Dib size-");
 	printf("\n%d",(int)dib.dibSize[0]);
@@ -444,15 +518,18 @@ static void printDib(struct _dib dib){
 	printf(",%d", (int)dib.importantColors[1]);
 	printf(",%d", (int)dib.importantColors[2]);
 	printf(",%d", (int)dib.importantColors[3]);
+	*/
 }
 
 static void printPixelArray(unsigned char *pixelArrayPadding, int size){
+	/*
 	printf("\n\n***PIXEL ARRAY***\n");
 	int i = 0;
 	while(i < size){
 		printf("%d\n",(int)pixelArrayPadding[i]);
 		i++;
 	}
+	*/
 }
 
 static int getImageSize(Bitmap bitmap){
