@@ -8,22 +8,14 @@ int main(int argc, char *argv[]) {
 	test();
 
 
-	/*
-
 	//Create bitmap
 	int width = 100;
 	int height = 100;
 	Bitmap bitmap = buildBitmap(width,height);
 	
 	//Insert pixels
-	color black;
-	color white;
-	black.red = 0;
-	black.green = 0;
-	black.blue = 0;
-	white.red = 255;
-	white.green = 255;
-	white.blue = 255;
+	color black = {0, 0, 0};
+	color white = {255, 255, 255};
 
 	int y = 0;
 	int x = 0;
@@ -41,14 +33,12 @@ int main(int argc, char *argv[]) {
 		y++;
 	}
 	//Save bitmap
-	char path[] = "/home/luis/Escritorio/img_4.bmp";
+	char path[] = "/home/luis/Escritorio/myBitmap.bmp";
 
 	saveBitmap(bitmap, path);
 
-	//le paso direccion de memoria donde se encuentra el bitmap
+	//Le paso direccion de memoria donde se encuentra el bitmap
 	destroyBitmap(&bitmap);
-
-	*/
 
 	return EXIT_SUCCESS;
 }

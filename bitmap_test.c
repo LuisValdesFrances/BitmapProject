@@ -8,38 +8,34 @@
 static void testBuildBitmap();
 static void testSetPixel();
 static void testSaveBitmap();
+static void testLoadBitmap();
 static void testDestroyBitmap();
 
  void test() {
  	testBuildBitmap();
 	testSetPixel();
 	testSaveBitmap();
+	testLoadBitmap();
 	testDestroyBitmap();
 	printf("All passed!\n");
 }
 
 static void testBuildBitmap(){
 	printf("testBuildBitmap\n");
-	Bitmap bitmap = buildBitmap(100,100);
+	Bitmap bitmap = buildBitmap(1000,1000);
 	assert(bitmap != NULL);
 	destroyBitmap(&bitmap);
 }
 
 static void testSetPixel(){
 	printf("testSetPixel\n");
-	int width = 100;
-	int height = 100;
+	int width = 1000;
+	int height = 1000;
 	Bitmap bitmap = buildBitmap(width, height);
 	color *c;
 
-	color black;
-	color white;
-	black.red = 0;
-	black.green = 0;
-	black.blue = 0;
-	white.red = 255;
-	white.green = 255;
-	white.blue = 255;
+	color black = {0, 0, 0};
+	color white = {255, 255, 255};
 	
 	int y = 0;
 	int x = 0;
@@ -76,18 +72,29 @@ static void testSetPixel(){
 
 static void testSaveBitmap(){
 	printf("testSaveBitmap\n");
-	char path[] = "/home/luis/Escritorio/bitmapTest.bmp";
+	
+	char path[] = "/home/luis/Escritorio/bitmapTest1.bmp";
 	int width = 100;
 	int height = 100;
 	Bitmap bitmap = buildBitmap(width,height);
-	color black;
-	color white;
-	black.red = 0;
-	black.green = 0;
-	black.blue = 0;
-	white.red = 255;
-	white.green = 255;
-	white.blue = 255;
+	saveBitmap(bitmap, path);
+	destroyBitmap(&bitmap);
+
+	FILE *fp = NULL;
+	fp = fopen (path, "r");
+ 	assert(fp != NULL);
+ 	fclose(fp);
+ }
+
+static void testLoadBitmap(){
+	printf("testLoadBitmap\n");
+	char path[] = "/home/luis/Escritorio/bitmapTest2.bmp";
+	int width = 1024;
+	int height = 1024;
+	Bitmap bitmap = buildBitmap(width,height);
+	
+	color black = {0, 0, 0};
+	color white = {255, 255, 255};
 
 	int y = 0;
 	int x = 0;
@@ -104,6 +111,7 @@ static void testSaveBitmap(){
 		y++;
 	}
 	saveBitmap(bitmap, path);
+
 	Bitmap lBitmap = loadBitmap(path);
 
 	y = 0;
@@ -120,11 +128,8 @@ static void testSaveBitmap(){
 		x = 0;
 		y++;
 	}
-
-	
 	destroyBitmap(&bitmap);
 	destroyBitmap(&lBitmap);
-
 }
 
 static void testDestroyBitmap(){

@@ -59,11 +59,14 @@ static void reverse(unsigned char *pixelArray, int size);
 static void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize);
 static void addPadding(Bitmap bitmap, unsigned char *pixelArray, int size, unsigned char *pixelArrayPadding, int sizePadding);
 
-static void readBitmap(char *filename, unsigned char *buffer);
-static int getBitmapWidth(unsigned char *bitmapArray);
-static int getBitmapHeight(unsigned char *bitmapArray);
-static void extractPixelArray(Bitmap bitmap, unsigned char *buffer, unsigned char *pixelArray);
+static void readBitmap(char *filename, unsigned char *bitmapBuffer);
+static int getBitmapWidth(unsigned char *bitmapBuffer);
+static int getBitmapHeight(unsigned char *bitmapBuffer);
+static int getPixelArrayOffset(unsigned char *bitmapBuffer);
+static void extractPixelArray(Bitmap bitmap, unsigned char *bitmapBuffer, unsigned char *pixelArray);
 static void deletePadding(Bitmap bitmap, unsigned char *pixelArrayPadding, unsigned char *pixelArray);
+static void buildColorsArray(Bitmap bitmap, unsigned char *pixelArray, color *pixelColors);
+
 
 static void printResult(struct _header header, struct _dib dib, unsigned char *pixelArrayPadding, int pixelArraySize);
 static void printHeader(struct _header header);
@@ -116,34 +119,66 @@ Bitmap buildBitmap(int width, int height){
 }
 
 Bitmap loadBitmap(char *filename){
-	int maxImageSize = MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT;
+	
+	int maxImageSize = (MAX_IMAGE_WIDTH * MAX_IMAGE_HEIGHT)*3;
+	int maxPaddingSize = getPaddingFile(MAX_IMAGE_WIDTH) * MAX_IMAGE_HEIGHT;
+	int headerSize = 14;
+	int dibSize = 40;
+	int maxBitmapSize = maxImageSize + maxPaddingSize + headerSize + dibSize;  
 
 	//Como la imagen puede ser muy grande, decido alojarla en el heap
-	unsigned char *buffer = malloc(sizeof(char)*maxImageSize);
 	
+	unsigned char *buffer = malloc(sizeof(char)*maxBitmapSize);
+
+	assert(buffer != NULL);
+
 	readBitmap(filename, buffer);
 	
 
  	int imgWidth= getBitmapWidth(buffer);
  	int imgHeight = getBitmapHeight(buffer);
 
- 	
-
- 	printf("\nBitmap width: %d", imgWidth);
- 	printf("\nBitmap height: %d", imgHeight);
-
  	Bitmap bitmap = buildBitmap(imgWidth, imgHeight);
 
-
+ 	
  	unsigned char pixelArray[getImageSize(bitmap)];
  	unsigned char pixelArrayPadding[getImageSize(bitmap) + getPaddingSize(bitmap)];
+ 	
+ 	int imageSize = bitmap->width*bitmap->height;
+ 	color *pixelColors = malloc(sizeof(color)*imageSize);
 
+ 	assert(pixelColors != NULL);
+
+	
  	extractPixelArray(bitmap, buffer, pixelArrayPadding);
  	deletePadding(bitmap, pixelArrayPadding, pixelArray);
  	
+ 	
  	reverse(pixelArray, getImageSize(bitmap));
- 	int fileSize = bitmap->width*3;
-	reverseFile(pixelArray, fileSize, getImageSize(bitmap));
+ 	
+ 	int fileSize = (bitmap->width)*3;
+ 	
+ 	
+ 	reverseFile(pixelArray, fileSize, getImageSize(bitmap));
+	
+	buildColorsArray(bitmap, pixelArray, pixelColors);
+	
+	//Insert pixels
+	int x = 0;
+	int y = 0;
+	int i = 0;
+	while(y < bitmap->height){
+		while(x < bitmap->width){
+			setPixel(bitmap, x, y, pixelColors[i]);
+			x++;
+			i++;
+		}
+		x = 0;
+		y++;
+	}
+
+	free(pixelColors);
+	pixelColors = NULL;
 
 	free(buffer);
  	buffer = NULL;
@@ -151,15 +186,45 @@ Bitmap loadBitmap(char *filename){
  	return bitmap;
 }
 
-static void extractPixelArray(Bitmap bitmap, unsigned char *buffer, unsigned char *pixelArrayPadding){
+static void buildColorsArray(Bitmap bitmap, unsigned char *pixelArray, color *pixelColors){
+	int imageSize = bitmap->width*bitmap->height;
+	int i = 0;
+	int j = 0;
+	while(i < imageSize){
+		pixelColors[i].blue = pixelArray[j++];
+		pixelColors[i].green = pixelArray[j++];
+		pixelColors[i].red = pixelArray[j++];
+		i++;
+	}
+}
 
+static void extractPixelArray(Bitmap bitmap, unsigned char *bitmapBuffer, unsigned char *pixelArrayPadding){
+	
+	int i = 0;
+	int offset = getPixelArrayOffset(bitmapBuffer);
+	int imageSizePadding = getImageSize(bitmap) + getPaddingSize(bitmap);
+	while(i < imageSizePadding){
+		pixelArrayPadding[i] = bitmapBuffer[i + offset];
+		i++;
+	}
 }
 
 static void deletePadding(Bitmap bitmap, unsigned char *pixelArrayPadding, unsigned char *pixelArray){
-
+	int i = 0;
+	int p = 0;
+	int fileSize = bitmap->width*3;
+	int imageSize = getImageSize(bitmap);
+	while(i < imageSize){
+		pixelArray[i] = pixelArrayPadding[p];
+		i++;
+		if(i > 0 && i % fileSize == 0){
+			p += getPaddingFile(bitmap->width);
+		}
+		p++;
+	}
 }
 
-static void readBitmap(char *filename, unsigned char *buffer){
+static void readBitmap(char *filename, unsigned char *bitmapBuffer){
 	int totalLines = 0;
  	int data = 0;
  	FILE *fp;
@@ -169,28 +234,37 @@ static void readBitmap(char *filename, unsigned char *buffer){
  	
  	
  	while((data = fgetc(fp)) != EOF){
- 		buffer[totalLines] = data;
+ 		bitmapBuffer[totalLines] = data;
  		totalLines++;
  	}
  	fclose(fp);
 }
 
-static int getBitmapWidth(unsigned char *bitmapArray){
+static int getBitmapWidth(unsigned char *bitmapBuffer){
 	int width = 0;
-	width += bitmapArray[18] & 0xff;
-	width += (bitmapArray[19]>>8) & 0xff;
-	width += (bitmapArray[20]>>16) & 0xff;
-	width += (bitmapArray[21]>>24) & 0xff;
+	width += bitmapBuffer[18];
+	width += (bitmapBuffer[19]<<8);
+	width += (bitmapBuffer[20]<<16);
+	width += (bitmapBuffer[21]<<24);
 	return width;
 }
 
-static int getBitmapHeight(unsigned char *bitmapArray){
+static int getBitmapHeight(unsigned char *bitmapBuffer){
 	int height = 0;
-	height += bitmapArray[22] & 0xff;
-	height += (bitmapArray[23]>>8) & 0xff;
-	height += (bitmapArray[24]>>16) & 0xff;
-	height += (bitmapArray[25]>>24) & 0xff;
+	height += bitmapBuffer[22];
+	height += (bitmapBuffer[23]<<8);
+	height += (bitmapBuffer[24]<<16);
+	height += (bitmapBuffer[25]<<24);
 	return height;
+}
+
+static int getPixelArrayOffset(unsigned char *bitmapBuffer){
+	int offset = 0;
+	offset += bitmapBuffer[10];
+	offset += (bitmapBuffer[11]<<8);
+	offset += (bitmapBuffer[12]<<16);
+	offset += (bitmapBuffer[13]<<24);
+	return offset;
 }
 
 /*
@@ -204,13 +278,6 @@ que se duplica dentro de la función.
 */
 void destroyBitmap(Bitmap *pBitmap){
 	
-	/*
-	Bitmap b = *pBitmap;
-	free(b->pixels);
-	b->pixels = NULL;
-	assert(b->pixels == NULL);
-	*/
-
 	free((*pBitmap)->pixels);
 	(*pBitmap)->pixels = NULL;
 	assert((*pBitmap)->pixels == NULL);
@@ -221,6 +288,7 @@ void destroyBitmap(Bitmap *pBitmap){
 
 void setPixel(Bitmap bitmap, int x, int y, color c){
 	//Formula: x+(width*y)
+	assert(x < bitmap->width && y < bitmap->height);
 	int index = x + (bitmap->width * y);
 	bitmap->pixels[index] = c;
 }
@@ -442,7 +510,7 @@ static void reverseFile(unsigned char *pixelArray, int fileSize, int totalSize){
 		aux[fileControl] = pixelArray[i];
 		i++;
 		fileControl++;
-		//Reserse any file
+		//Reserse each file
 		if(i%fileSize == 0){
 			reverse(aux, fileSize);
 			while(j < fileSize){
@@ -575,11 +643,10 @@ static int getImageSize(Bitmap bitmap){
 }
 
 static int getPaddingSize(Bitmap bitmap){
-	return (getPaddingFile(bitmap->width) * bitmap->height);
+	return getPaddingFile(bitmap->width) * bitmap->height;
 }
 
 static int getPaddingFile(int width){
-	  
 	int rest = width%4;
 	return rest;
 }
