@@ -277,11 +277,8 @@ y por este motivo es necesario actuar sobre el valor del puntero (que esta fuera
 que se duplica dentro de la función.
 */
 void destroyBitmap(Bitmap *pBitmap){
-	
 	free((*pBitmap)->pixels);
 	(*pBitmap)->pixels = NULL;
-	assert((*pBitmap)->pixels == NULL);
-
 	free(*pBitmap);
 	*pBitmap = NULL;
 }
