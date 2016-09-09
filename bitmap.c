@@ -33,23 +33,12 @@ struct _dib{
 };
 
 static struct _header createHeader(int size, int pixelArrayOffset);
-static void setSignature(struct _header *header);
-static void setFileSize(struct _header *header, int fileSize);
-static void setUnused(struct _header *header);
-static void setPixelArrayOffset(struct _header *header, int pixelArrayOffset);
 
 static struct _dib createDib(int size, Bitmap bitmap);
-static void setDibSize(struct _dib *dib, int size);
-static void setBitmapDimensions(struct _dib *dib, Bitmap bitmap);
-static void setBitmapSize(struct _dib *dib, Bitmap bitmap);
-static void setDibConstants(struct _dib *dib);
 
 static int getImageSize(Bitmap bitmap);
 static int getPaddingSize(Bitmap bitmap);
 static int getPaddingFile(int width);
-
-static void setBitmapSize(struct _dib *dib, Bitmap bitmap);
-static void setBitmapDimensions(struct _dib *dib, Bitmap bitmap);
 
 static void write(Bitmap bitmap, char *filename, struct _header header, struct _dib dib, int pixelArraySize);
 static void setValuesInPixelArray(Bitmap bitmap, unsigned char *pixelArray, int size);
@@ -73,6 +62,9 @@ static void printHeader(struct _header header);
 static void printDib(struct _dib dib);
 static void printPixelArray(unsigned char *pixelArrayPadding, int size);
 
+
+static void setInt(unsigned char *start, int number);
+static void setShort(unsigned char *start, int value);
 
 Bitmap buildBitmap(int width, int height){
 	if(width > MAX_IMAGE_WIDTH || height > MAX_IMAGE_HEIGHT){
@@ -316,20 +308,34 @@ void saveBitmap(Bitmap bitmap, char *filename){
 static struct _header createHeader(int fileSize, int pixelArrayOffset) {
 
 	struct _header header;
-	setSignature(&header);
-	setFileSize(&header, fileSize);
-	setUnused(&header);
-	setPixelArrayOffset(&header, pixelArrayOffset);
+	
+	header.signature[0] = 'B';
+	header.signature[1] = 'M';
+
+	setInt(header.fileSize, fileSize);
+	setShort(header.unused1, 0);
+	setShort(header.unused2, 0);
+	setInt(header.pixelArrayOffset, pixelArrayOffset);
 	return header;
 };
 
 static struct _dib createDib(int size, Bitmap bitmap) {
 
 	struct _dib dib;
-	setDibSize(&dib, size);
-	setBitmapDimensions(&dib, bitmap);
-	setBitmapSize(&dib, bitmap);
-	setDibConstants(&dib);
+	setInt(dib.dibSize, size);	
+	setInt(dib.bitmapWidth, bitmap->width);
+	setInt(dib.bitmapHeight, bitmap->height);
+	setInt(dib.bitmapSize, getImageSize(bitmap) + getPaddingSize(bitmap));
+	//Rest constans
+	dib.numberColors[0] = 0;
+	dib.numberColors[1] = 1;
+	dib.NumberBitsPerPixel[0] = 24;
+	dib.NumberBitsPerPixel[1] = 0;
+	setInt(dib.biRGB, 0);
+	setInt(dib.printResolutionHorizontal, 2835);
+	setInt(dib.printResolutionVertical, 2835);
+	setInt(dib.colorsPalette, 0);
+	setInt(dib.importantColors, 0);
 
 	return dib;
 };
@@ -345,92 +351,20 @@ static void write(Bitmap bitmap, char *filename, struct _header header, struct _
 	saveInFile(filename, header, dib, pixelArrayPadding, pixelArraySize);
 }
 
-
 /*
-Header fuctions
-*/
-static void setSignature(struct _header *header){
-	header->signature[0] = 'B';
-	header->signature[1] = 'M';
-}
-static void setFileSize(struct _header *header, int fileSize){
-	/*
 	Compara los cuatro bits de la derecha (Cada 'f' ocupa dos bits(valor 15 en decimal)) con 1111. 
 	Devuelve 1 si encuentra 1 o 0 en caso contrario
-	*/
-	header->fileSize[0] = fileSize & 0xff;
-	header->fileSize[1] = (fileSize>>8) & 0xff;
-	header->fileSize[2] = (fileSize>>16) & 0xff;
-	header->fileSize[3] = (fileSize>>24) & 0xff;
-}
-static void setUnused(struct _header *header){
-	header->unused1[0] = 0;
-	header->unused1[1] = 0;
-	header->unused2[0] = 0;
-	header->unused2[1] = 0;
-}
-static void setPixelArrayOffset(struct _header *header, int pixelArrayOffset){
-	header->pixelArrayOffset[0] = pixelArrayOffset & 0xff;
-	header->pixelArrayOffset[1] = (pixelArrayOffset>>8) & 0xff;
-	header->pixelArrayOffset[2] = (pixelArrayOffset>>16) & 0xff;
-	header->pixelArrayOffset[3] = (pixelArrayOffset>>24) & 0xff;
-}
-
-/*
-DIB fuctions
 */
-static void setDibSize(struct _dib *dib, int size){
-	dib->dibSize[0] = size & 0xff;
-	dib->dibSize[1] = (size>>8) & 0xff;
-	dib->dibSize[2] = (size>>16) & 0xff;
-	dib->dibSize[3] = (size>>24) & 0xff;
+static void setInt(unsigned char *start, int value){
+	start[0] = value & 0xff; // *(start + 0)
+	start[1] = (value>>8) & 0xff;
+	start[2] = (value>>16) & 0xff;
+	start[3] = (value>>24) & 0xff;	
 }
 
-static void setBitmapDimensions(struct _dib *dib, Bitmap bitmap){
-	dib->bitmapWidth[0] = bitmap->width & 0xff;
-	dib->bitmapWidth[1] = (bitmap->width>>8) & 0xff;
-	dib->bitmapWidth[2] = (bitmap->width>>16) & 0xff;
-	dib->bitmapWidth[3] = (bitmap->width>>24) & 0xff;
-	dib->bitmapHeight[0] = bitmap->height & 0xff;;
-	dib->bitmapHeight[1] = (bitmap->height>>8) & 0xff;
-	dib->bitmapHeight[2] = (bitmap->height>>16) & 0xff;
-	dib->bitmapHeight[3] = (bitmap->height>>24) & 0xff;
-}
-
-static void setBitmapSize(struct _dib *dib, Bitmap bitmap){
-	int totalSize = getImageSize(bitmap) + getPaddingSize(bitmap);
-	dib->bitmapSize[0] = totalSize & 0xff;
-	dib->bitmapSize[1] = (totalSize>>8) & 0xff;;
-	dib->bitmapSize[2] = (totalSize>>16) & 0xff;;
-	dib->bitmapSize[3] = (totalSize>>24) & 0xff;;
-}
-
-static void setDibConstants(struct _dib *dib){
-	dib->numberColors[0] = 0;
-	dib->numberColors[1] = 1;
-	dib->NumberBitsPerPixel[0] = 24;
-	dib->NumberBitsPerPixel[1] = 0;
-	dib->biRGB[0] = 0;
-	dib->biRGB[1] = 0;
-	dib->biRGB[2] = 0;
-	dib->biRGB[3] = 0;
-	
-	dib->printResolutionHorizontal[0] = 2835 & 0xff;
-	dib->printResolutionHorizontal[1] = (2835>>8) & 0xff;
-	dib->printResolutionHorizontal[2] = (2835>>16) & 0xff;
-	dib->printResolutionHorizontal[3] = (2835>>24) & 0xff;
-	dib->printResolutionVertical[0] = 2835 & 0xff;
-	dib->printResolutionVertical[1] = (2835>>8) & 0xff;
-	dib->printResolutionVertical[2] = (2835>>16) & 0xff;
-	dib->printResolutionVertical[3] = (2835>>24) & 0xff;
-	dib->colorsPalette[0] = 0;
-	dib->colorsPalette[1] = 0;
-	dib->colorsPalette[2] = 0;
-	dib->colorsPalette[3] = 0;
-	dib->importantColors[0] = 0;
-	dib->importantColors[1] = 0;
-	dib->importantColors[2] = 0;
-	dib->importantColors[3] = 0;
+static void setShort(unsigned char *start, int value){
+	start[0] = value & 0xff; // *(start + 0)
+	start[1] = (value>>8) & 0xff;
 }
 
 /*
@@ -536,6 +470,7 @@ static void saveInFile(char *filename, struct _header header, struct _dib dib, u
 	}
 	fclose(fp);
 }
+
 
 static void printResult(struct _header header, struct _dib dib, unsigned char *pixelArrayPadding, int pixelArraySize){
 	printHeader(header);
