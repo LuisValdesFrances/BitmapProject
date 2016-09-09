@@ -77,7 +77,7 @@ Bitmap buildBitmap(int width, int height){
 
 	Asi pues, buildBitmap hace lo siguiente:
 		-Reserva espacio en la memoria heap para almacenar un Bitmap
-		-Reserva otro espacio en la memoria heap`para almacenar una lista de colores
+		-Reserva otro espacio en la memoria heap para almacenar una lista de colores
 		-Accede al la lista de colores del bitmap (puntero) y la cambia el valor para que apunte al espacio donde se
 		 almacenan los colores.
 		-Devuelve un puntero que apunte a dicho espacia en la memoria heap
@@ -260,8 +260,7 @@ static int getPixelArrayOffset(unsigned char *bitmapBuffer){
 }
 
 /*
-La funcion se come como paramentro un puntero a bitmap y un puntero
-a un puntero de bitmap.
+La funcion se come como paramentro un puntero a un puntero de bitmap.
 La funcion free solo resetea a 0 los valores guardados en el heap y comunica al sistema de que ese
 espacio esta disponible de nuevo.
 En cambio cuando se asigna a un puntero a NULL, se des-referencia hacia a donde apuntaba (Su valor no apunta a nada), 
